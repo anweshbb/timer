@@ -1,0 +1,6 @@
+{
+  "name": "Chronos · Timer & Date",
+  "description": "A precision digital clock, versatile countdown timer with audio chimes, stopwatch with lap tracking, and date calculator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
