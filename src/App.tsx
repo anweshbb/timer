@@ -9,10 +9,24 @@ import { ClockView } from './components/ClockView';
 import { TimerView } from './components/TimerView';
 import { StopwatchView } from './components/StopwatchView';
 import { DateCalculatorView } from './components/DateCalculatorView';
+import { ShopView } from './components/ShopView';
+import { CartModal } from './components/CartModal';
+import { CartItem, ShopItem } from './types/shop';
 import { SoundType } from './utils/audio';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('clock');
+  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('chronos_cart');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return [];
+  });
+
   const [theme, setTheme] = useState<ThemeMode>(() => {
     try {
       const saved = localStorage.getItem('chronos_theme') as ThemeMode;
@@ -72,6 +86,51 @@ export default function App() {
     localStorage.setItem('chronos_sound_vol', String(soundVolume));
   }, [soundVolume]);
 
+  // Cart Persistence
+  useEffect(() => {
+    localStorage.setItem('chronos_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  const handleAddToCart = (item: ShopItem, quantity: number = 1) => {
+    setCart((prev) => {
+      const existingIndex = prev.findIndex((i) => i.item.id === item.id);
+      if (existingIndex > -1) {
+        const next = [...prev];
+        next[existingIndex] = {
+          ...next[existingIndex],
+          quantity: next[existingIndex].quantity + quantity,
+        };
+        return next;
+      }
+      return [...prev, { item, quantity }];
+    });
+  };
+
+  const handleUpdateQuantity = (productId: string, delta: number) => {
+    setCart((prev) =>
+      prev
+        .map((ci) => {
+          if (ci.item.id === productId) {
+            const newQty = ci.quantity + delta;
+            return newQty > 0 ? { ...ci, quantity: newQty } : null;
+          }
+          return ci;
+        })
+        .filter((ci): ci is CartItem => ci !== null)
+    );
+  };
+
+  const handleRemoveItem = (productId: string) => {
+    setCart((prev) => prev.filter((ci) => ci.item.id !== productId));
+  };
+
+  const handleClearCart = () => {
+    setCart([]);
+  };
+
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => sum + item.item.price * item.quantity, 0);
+
   // Fullscreen tracking
   useEffect(() => {
     const handleFsChange = () => {
@@ -113,6 +172,7 @@ export default function App() {
       else if (e.key === '2') setActiveTab('timer');
       else if (e.key === '3') setActiveTab('stopwatch');
       else if (e.key === '4') setActiveTab('date-calculator');
+      else if (e.key === '5') setActiveTab('shop');
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -146,6 +206,8 @@ export default function App() {
         onToggleTheme={setTheme}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
+        cartCount={cartCount}
+        onOpenCart={() => setIsCartOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -161,7 +223,27 @@ export default function App() {
         )}
         {activeTab === 'stopwatch' && <StopwatchView theme={theme} />}
         {activeTab === 'date-calculator' && <DateCalculatorView theme={theme} />}
+        {activeTab === 'shop' && (
+          <ShopView
+            theme={theme}
+            onAddToCart={handleAddToCart}
+            onOpenCart={() => setIsCartOpen(true)}
+            cartCount={cartCount}
+            cartTotal={cartTotal}
+          />
+        )}
       </main>
+
+      {/* Shopping Cart & WhatsApp Checkout Modal */}
+      <CartModal
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cart={cart}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onClearCart={handleClearCart}
+        theme={theme}
+      />
 
       {/* Clean, Quiet Footer (Zero fake telemetry) */}
       <footer
@@ -181,9 +263,9 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3 text-[11px] text-slate-400">
-            <span>Keys 1–4 switch modes</span>
+            <span>Keys 1–5 switch modes</span>
             <span aria-hidden="true">·</span>
-            <span>Zero drift Web Audio & Animation Frame</span>
+            <span>WhatsApp Instant Checkout</span>
           </div>
         </div>
       </footer>

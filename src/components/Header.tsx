@@ -4,6 +4,7 @@ import {
   Timer as TimerIcon,
   TimerReset,
   CalendarDays,
+  ShoppingBag,
   Volume2,
   VolumeX,
   Maximize2,
@@ -13,7 +14,7 @@ import {
 } from 'lucide-react';
 import { SoundType, playSound } from '../utils/audio';
 
-export type NavTab = 'clock' | 'timer' | 'stopwatch' | 'date-calculator';
+export type NavTab = 'clock' | 'timer' | 'stopwatch' | 'date-calculator' | 'shop';
 export type ThemeMode = 'dark' | 'light' | 'oled';
 
 interface HeaderProps {
@@ -29,6 +30,8 @@ interface HeaderProps {
   onToggleTheme: (theme: ThemeMode) => void;
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
+  cartCount: number;
+  onOpenCart: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -44,6 +47,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   isFullscreen,
   onToggleFullscreen,
+  cartCount,
+  onOpenCart,
 }) => {
   const [showSoundMenu, setShowSoundMenu] = React.useState(false);
   const soundMenuRef = React.useRef<HTMLDivElement>(null);
@@ -67,6 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'timer' as NavTab, label: 'Countdown Timer', icon: TimerIcon },
     { id: 'stopwatch' as NavTab, label: 'Stopwatch', icon: TimerReset },
     { id: 'date-calculator' as NavTab, label: 'Date Calculator', icon: CalendarDays },
+    { id: 'shop' as NavTab, label: 'Store', icon: ShoppingBag },
   ];
 
   const isLight = theme === 'light';
@@ -144,15 +150,41 @@ export const Header: React.FC<HeaderProps> = ({
                     ? 'Timer'
                     : item.id === 'stopwatch'
                     ? 'Stopwatch'
-                    : 'Date'}
+                    : item.id === 'date-calculator'
+                    ? 'Date'
+                    : 'Store'}
                 </span>
               </button>
             );
           })}
         </nav>
 
-        {/* Zone 3: Primary Actions (Sound, Theme, Fullscreen) */}
+        {/* Zone 3: Primary Actions (Cart, Sound, Theme, Fullscreen) */}
         <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Shopping Cart Button */}
+          <button
+            onClick={onOpenCart}
+            title={cartCount > 0 ? `${cartCount} items in cart` : 'Shopping Cart'}
+            className={`relative p-2 rounded-lg border text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+              cartCount > 0
+                ? isLight
+                  ? 'bg-indigo-50 border-indigo-300 text-indigo-700 hover:bg-indigo-100 shadow-xs'
+                  : 'bg-indigo-950/60 border-indigo-500/50 text-indigo-300 hover:bg-indigo-900/60 shadow-xs'
+                : isLight
+                ? 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                : theme === 'oled'
+                ? 'bg-neutral-900 border-neutral-800 text-neutral-300 hover:bg-neutral-800'
+                : 'bg-slate-800/80 border-slate-700/60 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-emerald-500 text-slate-950 font-mono font-bold text-[10px] flex items-center justify-center shadow-xs">
+                {cartCount}
+              </span>
+            )}
+          </button>
+
           {/* Sound Settings Dropdown */}
           <div className="relative" ref={soundMenuRef}>
             <button
