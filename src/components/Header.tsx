@@ -85,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Zone 1: Single text element wordmark */}
         <div className="flex items-center gap-3">
           <a
-            href="/"
+            href="#clock"
             onClick={(e) => {
               e.preventDefault();
               onTabChange('clock');
